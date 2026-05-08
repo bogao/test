@@ -1,0 +1,72 @@
+name: Publish @pckgs/ccs to npm
+
+# Triggered manually from the Actions UI or via REST API dispatch (which is
+# what `npm run publish:release` in the ccs source repo does). The workflow
+# reads ccs/ subdir contents (whatever the most recent ccs publish:test
+# pushed there) + ccs-publish-meta/{README.md, LICENSE}, wraps them as the
+# @pckgs/ccs npm package with an auto-bumped patch version, and publishes
+# to npm via OIDC trusted publishing — no static npm token needed.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Override version (leave empty to auto-bump patch from npm latest)'
+        required: false
+        type: string
+
+permissions:
+  id-token: write    # for npm OIDC trusted publishing
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout bogao/test
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Compute next version
+        id: ver
+        run: |
+          INPUT="${{ inputs.version }}"
+          if [ -n "$INPUT" ]; then
+            NEW="$INPUT"
+            echo "Using user-provided version: $NEW"
+          else
+            CURRENT=$(npm view @pckgs/ccs dist-tags.latest 2>/dev/null || echo "0.0.0")
+            IFS='.' read -ra V <<< "$CURRENT"
+            NEW="${V[0]}.${V[1]}.$((${V[2]} + 1))"
+            echo "Auto-bump: $CURRENT → $NEW"
+          fi
+          echo "version=$NEW" >> "$GITHUB_OUTPUT"
+
+      - name: Assemble package directory
+        run: |
+          mkdir -p /tmp/publish
+          cp -r ccs/* /tmp/publish/
+          cp ccs-publish-meta/README.md /tmp/publish/
+          cp ccs-publish-meta/LICENSE  /tmp/publish/
+          cat > /tmp/publish/package.json <<EOF
+          {
+            "name": "@pckgs/ccs",
+            "version": "${{ steps.ver.outputs.version }}",
+            "description": "Common Components — shared browser modules.",
+            "license": "MIT",
+            "publishConfig": {
+              "access": "public",
+              "provenance": true
+            }
+          }
+          EOF
+          echo "=== Package contents ==="
+          find /tmp/publish -type f | sort
+
+      - name: npm publish
+        run: cd /tmp/publish && npm publish
