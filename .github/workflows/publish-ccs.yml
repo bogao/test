@@ -62,6 +62,10 @@ jobs:
             "version": "${{ steps.ver.outputs.version }}",
             "description": "Common Components — shared browser modules.",
             "license": "MIT",
+            "repository": {
+              "type": "git",
+              "url": "git+https://github.com/bogao/test.git"
+            },
             "publishConfig": {
               "access": "public",
               "provenance": true
