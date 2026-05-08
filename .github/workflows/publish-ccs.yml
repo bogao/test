@@ -54,8 +54,6 @@ jobs:
         run: |
           mkdir -p /tmp/publish
           cp -r ccs/* /tmp/publish/
-          cp ccs-publish-meta/README.md /tmp/publish/
-          cp ccs-publish-meta/LICENSE  /tmp/publish/
           cat > /tmp/publish/package.json <<EOF
           {
             "name": "@pckgs/ccs",
