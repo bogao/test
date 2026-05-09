@@ -76,10 +76,10 @@ Esc / click-outside) or any `HTMLElement` (scoped, no page-level side
 effects).
 
 ```js
-// Modal sugar — back-compat aliases on window.Modal:
-Modal.confirm('Delete this item?', { onOk: () => doDelete() });
-Modal.alert('Saved successfully.');
-Modal.input('Project name?', { onOk: (val) => createProject(val) });
+// Sugar wrappers on window.Overlay (Modal-style box variants):
+Overlay.confirm('Delete this item?', { onOk: () => doDelete() });
+Overlay.alert('Saved successfully.');
+Overlay.input('Project name?', { onOk: (val) => createProject(val) });
 
 // Drawer (slide from right):
 const drawer = Overlay.show({
